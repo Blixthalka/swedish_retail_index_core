@@ -12,7 +12,7 @@ start(_StartType, _StartArgs) ->
     start_cowboy(),
 
     Res = swedish_retail_index_sup:start_link(),
-    io:format("Started Application\n"),
+    io:format("Started Application ~p\n", [node()]),
     Res.
 
 start_cowboy() ->

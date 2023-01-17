@@ -81,6 +81,7 @@ generate_id() ->
     Hash = crypto:hash(md5, integer_to_binary(Unique)),
     binary:encode_hex(Hash).
 
+
 start_mnesia() ->
     application:set_env(mnesia, dir, "./mnesia"),
     mnesia:stop(),
