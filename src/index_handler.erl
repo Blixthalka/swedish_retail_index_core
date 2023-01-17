@@ -6,8 +6,6 @@ init(Req, State) ->
     case cowboy_req:method(Req) of
         <<"GET">> ->
             get(Req, State);
-        <<"POST">> ->
-            post(Req, State);
         _ ->
             Req1 = cowboy_req:reply(404, #{}, Req),
             {ok, Req1, State}
@@ -37,10 +35,3 @@ get(Req, State) ->
     Json = jiffy:encode(Ejson),
     Req1 = cowboy_req:reply(200, #{<<"content-type">> => <<"application/json">>}, Json, Req),
     {ok, Req1, State}.
-
-
-post(Req, State) ->
-    index_server:recalc(),
-    Req1 = cowboy_req:reply(200, #{}, Req),
-    {ok, Req1, State}.
-

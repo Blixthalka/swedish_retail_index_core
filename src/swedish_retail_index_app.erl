@@ -9,32 +9,51 @@
 
 start(_StartType, _StartArgs) ->
     db:start_mnesia(),
-    start_cowboy(),
+    ok = start_cowboy(),
 
     Res = swedish_retail_index_sup:start_link(),
     io:format("Started Application ~p\n", [node()]),
     Res.
 
 start_cowboy() ->
-    Dispatch = cowboy_router:compile([{'_', [
-        {"/api/fx", fx_handler, []},
-        {"/api/points", point_handler, []},
+    ApiRoutes = cowboy_router:compile([{'_', [
         {"/api/instruments", instrument_handler, []},
         {"/api/index", index_handler, []}
     ]}]),
-    CowboyConfig = #{
+    ApiConfig = #{
         middlewares => [
             cowboy_router,
             cowboy_handler
         ],
         env => #{
-            dispatch => Dispatch
+            dispatch => ApiRoutes
         }
     },
-    CowboyOptions = [
+    ApiOptions = [
         {port, 8082}
     ],
-    {ok, _} = cowboy:start_clear(http_api, CowboyOptions, CowboyConfig).
+    {ok, _} = cowboy:start_clear(http_api, ApiOptions, ApiConfig),
+
+    OpsRoutes = cowboy_router:compile([{'_', [
+        {"/api/fx", fx_handler, []},
+        {"/api/points", point_handler, []},
+        {"/api/instruments", instrument_ops_handler, []},
+        {"/api/index", index_ops_handler, []}
+    ]}]),
+    OpsConfig = #{
+        middlewares => [
+            cowboy_router,
+            cowboy_handler
+        ],
+        env => #{
+            dispatch => OpsRoutes
+        }
+    },
+    OpsOptions = [
+        {port, 7082}
+    ],
+    {ok, _} = cowboy:start_clear(http_ops, OpsOptions, OpsConfig),
+    ok.
 
 stop(_State) ->
     ok = cowboy:stop_listener(http_api),
