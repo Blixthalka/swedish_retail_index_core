@@ -59,11 +59,28 @@ to_ejson(#point{key = Key, date = Date, instrument_key = InstrumentKey, price = 
 
 to_record(Map) ->
     #point{
-        date = maps:get(<<"date">>, Map),
+        date = parse_date(<<"date">>, Map),
         instrument_key = maps:get(<<"instrument_key">>, Map),
         price = calc:to_decimal(maps:get(<<"price">>, Map)),
         owners = calc:to_decimal(maps:get(<<"owners">>, Map))
     }.
+
+
+parse_date(Field, Map) ->
+    case maps:get(Field, Map, undefined) of
+        Date when is_binary(Date) andalso byte_size(Date) > 0 ->
+            DateBin = iolist_to_binary(string:trim(Date)),
+            case date_util:is_valid_date_binary(DateBin) of
+                true ->
+                    %% We accept dates on the format mm/dd/yyyy but we don't want to store that.
+                    %% We always want to store yyyy-mm-dd
+                    date_util:date_to_binary(date_util:binary_to_date(DateBin));
+                false ->
+                    throw({invalid_input, <<"Invalid date">>, Field})
+            end;
+        _ ->
+            throw({invalid_input, <<"Invalid date">>, Field})
+    end.
 
 key(Key, Point) ->
     Point#point{key = Key}.
