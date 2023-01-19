@@ -17,8 +17,9 @@ start(_StartType, _StartArgs) ->
 
 start_cowboy() ->
     ApiRoutes = cowboy_router:compile([{'_', [
-        {"/api/instruments", instrument_handler, []},
-        {"/api/index", index_handler, []}
+        {"/api/instruments/", instrument_handler, []},
+        {"/api/index", index_handler, []},
+        {"/api/points/:key", point_handler, []}
     ]}]),
     ApiConfig = #{
         middlewares => [
@@ -36,7 +37,7 @@ start_cowboy() ->
 
     OpsRoutes = cowboy_router:compile([{'_', [
         {"/api/fx", fx_handler, []},
-        {"/api/points", point_handler, []},
+        {"/api/points", point_ops_handler, []},
         {"/api/instruments", instrument_ops_handler, []},
         {"/api/index", index_ops_handler, []}
     ]}]),

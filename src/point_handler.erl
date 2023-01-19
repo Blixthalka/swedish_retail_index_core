@@ -4,19 +4,17 @@
 
 init(Req, State) ->
     case cowboy_req:method(Req) of
-        <<"POST">> ->
-            post(Req, State);
+        <<"GET">> ->
+            get(Req, State, cowboy_req:binding(key, Req));
         _ ->
             Req1 = cowboy_req:reply(404, #{}, Req),
             {ok, Req1, State}
     end.
 
-post(Req, State) ->
-    {ok, Body, Req1} = cowboy_req:read_body(Req),
-    BodyMap = jiffy:decode(Body, [return_maps]),
-    Point0 = point:to_record(BodyMap),
-    {ok, Point1} = point:db_create(Point0),
-    Ejson = point:to_ejson(Point1),
+get(Req, State, Key) ->
+    Ejson = lists:map(fun(P) ->
+        point:to_ejson(P)
+    end, point:db_find_all(Key)),
     Json = jiffy:encode(Ejson),
-    Req2 = cowboy_req:reply(200, #{<<"content-type">> => <<"application/json">>}, Json, Req1),
-    {ok, Req2, State}.
+    Req1 = cowboy_req:reply(200, #{<<"content-type">> => <<"application/json">>}, Json, Req),
+    {ok, Req1, State}.

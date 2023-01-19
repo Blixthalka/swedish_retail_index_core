@@ -3,6 +3,8 @@
 -export([
     to_decimal/1,
     to_binary/1,
+    to_binary/2,
+    to_binary_percent/1,
     round/1,
     ejson_format/1,
     compare/2,
@@ -32,6 +34,12 @@ to_decimal(Binary) ->
 
 to_binary(Decimal) ->
     decimal_conv:to_binary(Decimal, #{ pretty => true }).
+
+to_binary(Decimal, Decimals) ->
+    to_binary(calc:round(Decimal, Decimals)).
+
+to_binary_percent(Decimal) ->
+   to_binary(calc:multiply(Decimal, calc:to_decimal(<<"100">>)), 2).
 
 ejson_format(Decimal) ->
     binary:replace(to_binary(calc:round(Decimal)), <<".0">>, <<>>).

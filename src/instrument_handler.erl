@@ -12,18 +12,19 @@ init(Req, State) ->
     end.
 
 get(Req, State) ->
-
     Members = helper:construct_members_most_recent(),
 
     Ejson = lists:map(fun({Instrument, Point, Weight}) ->
         {[
+            {key, instrument:key(Instrument)},
             {name, instrument:name(Instrument)},
             {external_id, instrument:external_id(Instrument)},
-            {owners, calc:to_binary(calc:round(point:owners(Point), 0))},
-            {weight, calc:to_binary(calc:round(calc:multiply(Weight, calc:to_decimal(<<"100">>)), 2))}
+            {owners, calc:to_binary(point:owners(Point), 0)},
+            {weight, calc:to_binary_percent(Weight)}
         ]}
     end, Members),
 
     Json = jiffy:encode(Ejson),
     Req1 = cowboy_req:reply(200, #{<<"content-type">> => <<"application/json">>}, Json, Req),
     {ok, Req1, State}.
+
