@@ -5,9 +5,7 @@
     start_link/0,
     stop/0,
     read/0,
-    recalc/0,
-
-    debug/1
+    recalc/0
 ]).
 
 -export([
@@ -105,13 +103,6 @@ calculate() ->
             {LastDate, LastValue, change(FirstValue, LastValue), Sequence}
     end.
 
-find_start_date(All) ->
-    Values = maps:values(All),
-    AllDates = lists:flatmap(fun({_, Points}) ->
-        maps:keys(Points)
-    end, Values),
-    lists:min(AllDates).
-
 change(Start, End) ->
     calc:divide(calc:sub(End, Start), Start).
 
@@ -149,46 +140,3 @@ date_sequence_calc(Date, ToDate) ->
     [Date] ++ date_sequence_calc(date_util:shift(Date, 1, days), ToDate).
 
 
-
-debug(StartDate) ->
-    io:fwrite("Calculating State\n"),
-    All = lists:foldl(fun(Instrument, InstrumentMap) ->
-        Points = point:db_find_all(instrument:key(Instrument)),
-        PointMap = lists:foldl(fun(Point, Map) ->
-            maps:put(point:date(Point), Point, Map)
-        end, #{}, Points),
-        maps:put(instrument:key(Instrument), {Instrument, PointMap}, InstrumentMap)
-    end, #{}, instrument:db_list()),
-
-    case maps:keys(All) of
-        [] ->
-            {<<"1970-01-01">>, calc:zero(), calc:zero(), []};
-        _ ->
-            lists:foldl(fun(Date, Acc) ->
-                case Date =:= StartDate of
-                    true ->
-                        [{Date, calc:zero(), calc:to_decimal(<<"200">>)}];
-                    false ->
-                        case create_day(maps:values(All), Date) of
-                            [] ->
-                                Acc;
-                            Day ->
-                                Members = helper:construct_members(Day),
-                                IndexChanges = lists:map(fun({Instrument, Point, Weight}) ->
-                                    Fx = fx:db_closest_rate(Date, instrument:currency(Instrument), <<"SEK">>),
-                                    DayPrice = calc:multiply(point:price(Point), Fx),
-                                    YesterdayPrice = calc:multiply(find_prev_price(All, Date, Instrument, Point), Fx),
-                                    Change = change(YesterdayPrice, DayPrice),
-                                    io:fwrite("tt ~p ~p", [instrument:name(Instrument), calc:to_binary(Change)]),
-                                    calc:multiply(Change, Weight)
-                                end, Members),
-
-                                IndexChange = calc:sum(IndexChanges),
-                                {_, _, PrevValue} = hd(Acc),
-                                Value = calc:multiply(calc:add(calc:to_decimal(<<"1">>), IndexChange), PrevValue),
-
-                                [{Date, IndexChange, Value} | Acc]
-                        end
-                end
-        end, [], date_sequence(StartDate, date_util:today()))
-    end.

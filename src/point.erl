@@ -90,7 +90,7 @@ key(#point{key = Key}) ->
 
 
 db_find_most_recent(InstrumentKey) ->
-    RightInstruments = lists:filter(fun(#point{instrument_key = Key, date = D}) ->
+    RightInstruments = lists:filter(fun(#point{instrument_key = Key}) ->
         InstrumentKey =:= Key
     end, db_list()),
     [Recent | _] = lists:sort(fun(#point{date = A}, #point{date = B}) ->
@@ -99,7 +99,7 @@ db_find_most_recent(InstrumentKey) ->
     Recent.
 
 db_find_all(InstrumentKey) ->
-    RightInstruments = lists:filter(fun(#point{instrument_key = Key, date = D}) ->
+    RightInstruments = lists:filter(fun(#point{instrument_key = Key}) ->
         InstrumentKey =:= Key
     end, db_list()),
     Points = lists:sort(fun(#point{date = A}, #point{date = B}) ->
