@@ -18,6 +18,7 @@ get(Req, State) ->
         {[
             {key, instrument:key(Instrument)},
             {name, instrument:name(Instrument)},
+            {is_index, instrument:is_index(Instrument)},
             {external_id, instrument:external_id(Instrument)},
             {owners, calc:to_binary(point:owners(Point), 0)},
             {weight, calc:to_binary_percent(Weight)}

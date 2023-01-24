@@ -16,7 +16,9 @@
     db_create_table/0,
     db_create/1,
     db_list/0,
-    db_delete/1
+    db_delete/1,
+
+    update_db/0
 ]).
 
 
@@ -132,3 +134,11 @@ db_create(Point) ->
             throw({error, too_many_with_same_external_id})
     end.
 
+update_db() ->
+    Fun = fun(X) -> update_row(X) end,
+    Attributes = record_info(fields, ?MODULE),
+    {atomic, ok} = mnesia:transform_table(?MODULE, Fun, Attributes).
+
+
+update_row(Instrument) ->
+    Instrument.

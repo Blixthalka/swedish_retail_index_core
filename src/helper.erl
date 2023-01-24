@@ -16,7 +16,7 @@ all() ->
             maps:put(point:date(Point), Point, Map)
         end, #{}, Points),
         maps:put(instrument:key(Instrument), {Instrument, PointMap}, InstrumentMap)
-    end, #{}, instrument:db_list()).
+    end, #{}, instrument:db_list_instruments()).
 
 member_diff(DateFrom, DateTo) ->
     All = all(),

@@ -20,11 +20,13 @@
     db_create/1,
     db_list/2,
     db_list/0,
-    db_delete/1
+    db_delete/1,
+
+    update_db/0
 ]).
 
 -record(fx, {
-    key :: binary(),
+    key :: binary() | undefined,
     date :: binary(),
     from :: binary(),
     to :: binary(),
@@ -130,3 +132,13 @@ db_create(Fx) ->
         _ ->
             throw({error, too_many_equal})
     end.
+
+
+update_db() ->
+    Fun = fun(X) -> update_row(X) end,
+    Attributes = record_info(fields, ?MODULE),
+    {atomic, ok} = mnesia:transform_table(?MODULE, Fun, Attributes).
+
+
+update_row(Instrument) ->
+    Instrument.

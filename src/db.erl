@@ -61,6 +61,15 @@ write(Module, EntityWithKey) ->
     end),
     {ok, EntityWithKey}.
 
+create_tables() ->
+    mnesia:stop(),
+    mnesia:create_schema([node()]),
+    mnesia:start(),
+    lists:foreach(fun(Table) ->
+        Table:db_create_table()
+    end, ?TABLES),
+    mnesia:wait_for_tables(?TABLES, infinity).
+
 create_table(Module, Fields) ->
     mnesia:create_table(Module, [
         {attributes, Fields},
@@ -82,13 +91,31 @@ generate_id() ->
     binary:encode_hex(Hash).
 
 
+
 start_mnesia() ->
     application:set_env(mnesia, dir, "./mnesia"),
-    mnesia:stop(),
-    mnesia:create_schema([node()]),
-    mnesia:start(),
-    lists:foreach(fun(Table) ->
-        Table:db_create_table()
-    end, ?TABLES),
-    mnesia:wait_for_tables(?TABLES, infinity),
+    case mnesia:wait_for_tables([instrument], 20_000) of
+        {timeout, _} ->
+            create_tables(),
+            start_mnesia();
+        {error, _} = E->
+            throw(E);
+        ok ->
+            ok = wait_for_tables_and_create(?TABLES, 20_000)
+    end,
     ok.
+
+wait_for_tables_and_create(Tables, Timeout) ->
+    case mnesia:wait_for_tables(Tables, Timeout) of
+        ok ->
+            lists:foreach(fun(Module) ->
+                {atomic, ok} = Module:update_db()
+            end, Tables),
+            ok;
+        {timeout, BadTables} ->
+            lists:foreach(fun(BadTable) ->
+                    BadTable:db_create_table()
+            end, BadTables),
+            wait_for_tables_and_create(BadTables, Timeout),
+            ok
+    end.
