@@ -17,7 +17,7 @@ start(_StartType, _StartArgs) ->
 
 start_cowboy() ->
     ApiRoutes = cowboy_router:compile([{'_', [
-        {"/api/instruments/", instrument_handler, []},
+        {"/api/instruments/[:key]", instrument_handler, []},
         {"/api/index", index_handler, []},
         {"/api/points/:key", point_handler, []}
     ]}]),

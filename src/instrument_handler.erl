@@ -5,13 +5,13 @@
 init(Req, State) ->
     case cowboy_req:method(Req) of
         <<"GET">> ->
-            get(Req, State);
+            get(Req, State, cowboy_req:binding(key, Req));
         _ ->
             Req1 = cowboy_req:reply(404, #{}, Req),
             {ok, Req1, State}
     end.
 
-get(Req, State) ->
+get(Req, State, undefined) ->
     Members = helper:construct_members_most_recent(),
 
     Ejson = lists:map(fun({Instrument, Point, Weight}) ->
@@ -27,5 +27,32 @@ get(Req, State) ->
 
     Json = jiffy:encode(Ejson),
     Req1 = cowboy_req:reply(200, #{<<"content-type">> => <<"application/json">>}, Json, Req),
+    {ok, Req1, State};
+get(Req, State, Key) ->
+    case instrument:db_read(Key) of
+        {error, not_found} ->
+            Req1 = cowboy_req:reply(404, Req);
+        {ok, Instrument} ->
+            Points = lists:filter(fun(P) ->
+                date_util:is_after_or_equal(point:date(P), <<"2023-01-01">>)
+            end, point:db_find_all(instrument:key(Instrument))),
+            Owners0 = lists:map(fun(P) ->
+                {point:date(P), point:owners(P)}
+            end, Points),
+            Owners1 = lists:sort(Owners0),
+
+            Ejson = {[
+                {name, instrument:name(Instrument)},
+                {owners, lists:map(fun({Date, Owners}) ->
+                    {[
+                        {date, Date},
+                        {owners, calc:to_binary(Owners)}
+                    ]}
+                end, Owners1)}
+            ]},
+
+            Json = jiffy:encode(Ejson),
+            Req1 = cowboy_req:reply(200, #{<<"content-type">> => <<"application/json">>}, Json, Req)
+    end,
     {ok, Req1, State}.
 

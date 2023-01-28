@@ -18,6 +18,7 @@
     db_list_instruments/0,
     db_index/0,
     db_delete/1,
+    db_read/1,
 
     update_db/0
 ]).
@@ -85,6 +86,16 @@ db_index() ->
         is_index(I)
     end, db:list(?MODULE)),
     hd(V).
+
+db_read(Key) ->
+    case lists:filter(fun(I) ->
+        key(I) =:= Key
+    end, db:list(?MODULE)) of
+        [] ->
+            {error, not_found};
+        [V] ->
+            {ok, V}
+    end.
 
 db_list() ->
     db:list(?MODULE).
