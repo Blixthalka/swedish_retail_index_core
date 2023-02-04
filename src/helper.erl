@@ -5,7 +5,8 @@
 -export([
     construct_members_most_recent/0,
     construct_members/1,
-    member_diff/2
+    member_diff/2,
+    only_member_of_first/2
 ]).
 
 
@@ -23,15 +24,15 @@ member_diff(DateFrom, DateTo) ->
     {FromKeys, FromMap} = sort(construct_members_for_date(All, DateFrom)),
     {ToKeys, ToMap} = sort(construct_members_for_date(All, DateTo)),
 
-    Old = to_name(not_member(FromKeys, ToKeys), FromMap),
-    New = to_name(not_member(ToKeys, FromKeys), ToMap),
+    Old = to_name(only_member_of_first(FromKeys, ToKeys), FromMap),
+    New = to_name(only_member_of_first(ToKeys, FromKeys), ToMap),
     {Old, New}.
 
 to_name(List, Map) ->
     lists:map(fun(I) -> maps:get(I, Map) end, List).
 
-not_member(A, B) ->
-    lists:filter(fun(Bb) -> not lists:member(Bb, A) end, B).
+only_member_of_first(A, B) ->
+    lists:filter(fun(A2) -> not lists:member(A2, B) end, A).
 
 sort(Day) ->
     lists:foldl(fun({Instrument, _, _}, {Keys, Map}) ->
