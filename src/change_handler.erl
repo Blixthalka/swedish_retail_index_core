@@ -12,7 +12,7 @@ init(Req, State) ->
     end.
 
 get(Req, State) ->
-    {Old, New} = helper:member_diff(<<"2023-01-02">>, date_util:today()),
+    {Old, New} = helper:member_diff(<<"2023-01-03">>, date_util:today()),
 
     Ejson = {[
         {old, Old},
