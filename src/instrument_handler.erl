@@ -57,7 +57,7 @@ get(Req, State, Key) ->
                 {owners, lists:map(fun({Date, Owners}) ->
                     {[
                         {date, Date},
-                        {owners, calc:to_binary(Owners)}
+                        {owners, calc:to_binary(Owners, 0)}
                     ]}
                 end, Owners1)}
             ]},

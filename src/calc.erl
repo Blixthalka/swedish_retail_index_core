@@ -35,6 +35,9 @@ to_decimal(Binary) ->
 to_binary(Decimal) ->
     decimal_conv:to_binary(Decimal, #{ pretty => true }).
 
+to_binary(Decimal, 0) ->
+    Bin = to_binary(calc:round(Decimal, 0)),
+    binary:replace(Bin, <<".0">>, <<"">>);
 to_binary(Decimal, Decimals) ->
     to_binary(calc:round(Decimal, Decimals)).
 
