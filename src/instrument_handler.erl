@@ -36,9 +36,20 @@ get(Req, State, Key) ->
             Points = lists:filter(fun(P) ->
                 date_util:is_after_or_equal(point:date(P), <<"2023-01-01">>)
             end, point:db_find_all(instrument:key(Instrument))),
-            Owners0 = lists:map(fun(P) ->
-                {point:date(P), point:owners(P)}
-            end, Points),
+
+
+            GroupedByMonth = lists:foldl(fun(P, Acc) ->
+                PointKey = binary:part(point:date(P), 0, 7),
+                maps:update_with(PointKey, fun(List) -> [P|List] end, [P], Acc)
+            end, #{}, Points),
+            Owners0 = lists:map(fun(ListOfPoints) ->
+                Sorted = lists:sort(fun(A, B) ->
+                    point:date(A) =< point:date(B)
+                end, ListOfPoints),
+                FirstPoint = hd(Sorted),
+                {point:date(FirstPoint), point:owners(FirstPoint)}
+            end, maps:values(GroupedByMonth)),
+
             Owners1 = lists:sort(Owners0),
 
             Ejson = {[

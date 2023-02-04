@@ -19,7 +19,8 @@ start_cowboy() ->
     ApiRoutes = cowboy_router:compile([{'_', [
         {"/api/instruments/[:key]", instrument_handler, []},
         {"/api/index", index_handler, []},
-        {"/api/points/:key", point_handler, []}
+        {"/api/points/:key", point_handler, []},
+        {"/api/change", change_handler, []}
     ]}]),
     ApiConfig = #{
         middlewares => [
