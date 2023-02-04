@@ -31,7 +31,7 @@ to_name(List, Map) ->
     lists:map(fun(I) -> maps:get(I, Map) end, List).
 
 not_member(A, B) ->
-    lists:filter(fun(Aa) -> not lists:member(Aa, B) end, B).
+    lists:filter(fun(Bb) -> not lists:member(Bb, A) end, B).
 
 sort(Day) ->
     lists:foldl(fun({Instrument, _, _}, {Keys, Map}) ->
