@@ -106,6 +106,8 @@ calculate() ->
 change(Start, End) ->
     calc:divide(calc:sub(End, Start), Start).
 
+find_prev_price(_All, <<"2021-01-01">>, _Instrument, Point) ->
+    point:price(Point);
 find_prev_price(All, OldDate, Instrument, Point) ->
     Date = date_util:shift(OldDate, -1, days),
     {_, Points} = maps:get(instrument:key(Instrument), All),
