@@ -66,14 +66,14 @@ calculate() ->
 
     case maps:keys(All) of
         [] ->
-            {<<"1970-01-01">>, calc:zero(), calc:zero(), []};
+            [point:create(<<"1970-01-01">>, sri, calc:zero(), calc:zero())];
         _ ->
             StartDate = <<"2023-01-01">>,
 
             Res = lists:foldl(fun(Date, Acc) ->
                 case Date =:= StartDate of
                     true ->
-                        [{Date, calc:zero(), calc:to_decimal(<<"100">>)}];
+                        [{Date, calc:to_decimal(<<"100">>)}];
                     false ->
                         case create_day(maps:values(All), Date) of
                             [] ->
@@ -84,27 +84,24 @@ calculate() ->
                                     Fx = fx:db_closest_rate(Date, instrument:currency(Instrument), <<"SEK">>),
                                     DayPrice = calc:multiply(point:price(Point), Fx),
                                     YesterdayPrice = calc:multiply(find_prev_price(All, Date, Instrument, Point), Fx),
-                                    Change = change(YesterdayPrice, DayPrice),
+                                    Change = calc:percent_change(YesterdayPrice, DayPrice),
                                     calc:multiply(Change, Weight)
                                 end, Members),
 
                                 IndexChange = calc:sum(IndexChanges),
-                                {_, _, PrevValue} = hd(Acc),
+                                {_, PrevValue} = hd(Acc),
                                 Value = calc:multiply(calc:add(calc:to_decimal(<<"1">>), IndexChange), PrevValue),
 
-                                [{Date, IndexChange, Value} | Acc]
+                                [{Date, Value} | Acc]
                         end
                 end
             end, [], date_sequence(StartDate, date_util:today())),
 
-            {LastDate, _, LastValue} = hd(Res),
             Sequence = lists:reverse(Res),
-            {_, _, FirstValue} = hd(Sequence),
-            {LastDate, LastValue, change(FirstValue, LastValue), Sequence}
+            lists:map(fun({Date, Price}) ->
+                point:create(Date, sri, Price, calc:zero())
+            end, Sequence)
     end.
-
-change(Start, End) ->
-    calc:divide(calc:sub(End, Start), Start).
 
 find_prev_price(_All, <<"2021-01-01">>, _Instrument, Point) ->
     point:price(Point);

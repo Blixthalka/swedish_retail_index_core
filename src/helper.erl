@@ -6,7 +6,9 @@
     construct_members_most_recent/0,
     construct_members/1,
     member_diff/2,
-    only_member_of_first/2
+    only_member_of_first/2,
+    normalize_compare/2,
+    graph_ejson/1
 ]).
 
 
@@ -77,3 +79,38 @@ construct_members(Day) ->
         {Instrument, Point, calc:divide(point:owners(Point), TotalSize)}
     end, Members).
 
+
+normalize_compare(MainPoints, ComparePoints) ->
+    FirstDate = point:date(hd(MainPoints)),
+    FirstMainPrice = point:price(hd(MainPoints)),
+    FirstComparePrice = find_price(FirstDate, ComparePoints),
+
+    lists:map(fun(Point) ->
+        Date = point:date(Point),
+        NonNormalizedPrice = find_price(Date, ComparePoints),
+        Price = calc:multiply(calc:divide(NonNormalizedPrice, FirstComparePrice), FirstMainPrice),
+        {Date, point:price(Point), Price}
+    end, MainPoints).
+
+
+find_price(<<"2021-01-01">>, _) ->
+    calc:zero();
+find_price(Date, Points) ->
+    FoundPoints = lists:filter(fun(P) ->
+        point:date(P) =:= Date
+    end, Points),
+    case FoundPoints of
+        [] ->
+            find_price(date_util:shift(Date, -1, days), Points);
+        [Point] ->
+            point:price(Point)
+    end.
+
+graph_ejson(Graph) ->
+    lists:map(fun({Date, Price, ComparePrice}) ->
+        {[
+            {date, Date},
+            {value, calc:to_binary(Price, 2)},
+            {compare, calc:to_binary(ComparePrice, 2)}
+        ]}
+    end, Graph).

@@ -1,6 +1,7 @@
 -module(point).
 
 -export([
+    create/4,
     key/1,
     key/2,
     owners/1,
@@ -25,7 +26,7 @@
 -record(point, {
     key :: binary() | undefined,
     date :: binary(),
-    instrument_key :: binary(),
+    instrument_key :: binary() | sri,
     price :: decimal:decimal(),
     owners :: decimal:decimal()
 }).
@@ -36,6 +37,13 @@
     point/0
 ]).
 
+create(Date, InstrumentKey, Price, Owners) ->
+    #point{
+        date = Date,
+        instrument_key = InstrumentKey,
+        price = Price,
+        owners = Owners
+    }.
 
 date(#point{date = Date}) ->
     Date.

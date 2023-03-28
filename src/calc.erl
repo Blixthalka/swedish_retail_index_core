@@ -16,7 +16,8 @@
     multiply/2,
     sum/1,
     min/1,
-    max/1
+    max/1,
+    percent_change/2
 ]).
 
 -define(PRECISION, 32).
@@ -95,3 +96,6 @@ max([H|T]) ->
                 Acc
         end
     end, H, T).
+
+percent_change(From, To) ->
+    calc:divide(calc:sub(To, From), From).

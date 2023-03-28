@@ -52,6 +52,9 @@ get(Req, State, Key) ->
 
             Owners1 = lists:sort(Owners0),
 
+            ComparePoints = index_server:read(),
+            Graph = helper:normalize_compare(Points, ComparePoints),
+
             Ejson = {[
                 {name, instrument:name(Instrument)},
                 {owners, lists:map(fun({Date, Owners}) ->
@@ -59,7 +62,8 @@ get(Req, State, Key) ->
                         {date, Date},
                         {owners, calc:to_binary(Owners, 0)}
                     ]}
-                end, Owners1)}
+                end, Owners1)},
+                {graph, helper:graph_ejson(Graph)}
             ]},
 
             Json = jiffy:encode(Ejson),

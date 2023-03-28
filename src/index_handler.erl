@@ -12,31 +12,34 @@ init(Req, State) ->
     end.
 
 get(Req, State) ->
-    {LastDate, Value, FromStartChange, Sequence} = index_server:read(),
+    Points = index_server:read(),
 
-    AllValues = lists:map(fun({_, _, LocalValue}) -> LocalValue end, Sequence),
+    AllValues = lists:map(fun(Point) -> point:price(Point) end, Points),
     Min = calc:min(AllValues),
     Max = calc:max(AllValues),
 
-    {_, LastChange, _} = hd(lists:reverse(Sequence)),
+    Reversed = lists:reverse(Points),
 
-    {CompareInstrument, ComparePriceMap} = compare(Sequence),
+    FirstPoint = hd(Points),
+    LastPoint = hd(Reversed),
+    NextLastPoint = hd(tl(Reversed)),
+    LastChange = calc:percent_change(point:price(NextLastPoint), point:price(LastPoint)),
+    FromStartChange = calc:percent_change(point:price(FirstPoint), point:price(LastPoint)),
+
+    Instrument = instrument:db_index(),
+    ComparePoints = point:db_find_all(instrument:key(Instrument)),
+
+    Graph = helper:normalize_compare(Points, ComparePoints),
 
     Ejson = {[
-        {date, LastDate},
-        {compare_name, instrument:name(CompareInstrument)},
-        {value, calc:to_binary(Value, 2)},
+        {date, point:date(LastPoint)},
+        {compare_name, instrument:name(Instrument)},
+        {value, calc:to_binary(point:price(LastPoint), 2)},
         {min, calc:to_binary(Min, 2)},
         {max, calc:to_binary(Max, 2)},
         {last_change, calc:to_binary_percent(LastChange)},
         {from_start_change, calc:to_binary_percent(FromStartChange)},
-        {graph, lists:map(fun({Date, _, LocalValue}) ->
-            {[
-                {date, Date},
-                {value, calc:to_binary(LocalValue, 2)},
-                {compare, calc:to_binary(find_in_map(Date, ComparePriceMap), 2)}
-            ]}
-        end, Sequence)}
+        {graph, helper:graph_ejson(Graph)}
     ]},
 
     Json = jiffy:encode(Ejson),
@@ -44,42 +47,5 @@ get(Req, State) ->
     {ok, Req1, State}.
 
 
-find_in_map(<<"2022-12-01">>, _) ->
-    calc:zero();
-find_in_map(Date, Map) ->
-    case maps:get(Date, Map, undefined) of
-        undefined ->
-            find_in_map(date_util:shift(Date, -1, days), Map);
-        V ->
-            V
-    end.
 
-
-compare(Sequence) ->
-    Instrument = instrument:db_index(),
-    Points = point:db_find_all(instrument:key(Instrument)),
-
-    {FirstDate, _, _} = hd(Sequence),
-    FirstPrice = find_price(FirstDate, Points),
-
-    PriceMap = lists:foldl(fun({Date, _, _}, Map) ->
-        NonNormalizedPrice = find_price(Date, Points),
-        Price = calc:multiply(calc:divide(NonNormalizedPrice, FirstPrice), calc:to_decimal(<<"100">>)),
-        maps:put(Date, Price, Map)
-    end, #{}, Sequence),
-    {Instrument, PriceMap}.
-
-
-find_price(<<"2021-01-01">>, _) ->
-    calc:zero();
-find_price(Date, Points) ->
-    FoundPoints = lists:filter(fun(P) ->
-        point:date(P) =:= Date
-    end, Points),
-    case FoundPoints of
-        [] ->
-            find_price(date_util:shift(Date, -1, days), Points);
-        [Point] ->
-            point:price(Point)
-    end.
 
