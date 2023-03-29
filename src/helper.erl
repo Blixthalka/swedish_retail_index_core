@@ -7,8 +7,7 @@
     construct_members/1,
     member_diff/2,
     only_member_of_first/2,
-    normalize_compare/2,
-    graph_ejson/1
+    normalize_compare/2
 ]).
 
 
@@ -106,11 +105,3 @@ find_price(Date, Points) ->
             point:price(Point)
     end.
 
-graph_ejson(Graph) ->
-    lists:map(fun({Date, Price, ComparePrice}) ->
-        {[
-            {date, Date},
-            {value, calc:to_binary(Price, 2)},
-            {compare, calc:to_binary(ComparePrice, 2)}
-        ]}
-    end, Graph).

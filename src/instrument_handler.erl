@@ -37,33 +37,19 @@ get(Req, State, Key) ->
                 date_util:is_after_or_equal(point:date(P), <<"2023-01-01">>)
             end, point:db_find_all(instrument:key(Instrument))),
 
-
-            GroupedByMonth = lists:foldl(fun(P, Acc) ->
-                PointKey = binary:part(point:date(P), 0, 7),
-                maps:update_with(PointKey, fun(List) -> [P|List] end, [P], Acc)
-            end, #{}, Points),
-            Owners0 = lists:map(fun(ListOfPoints) ->
-                Sorted = lists:sort(fun(A, B) ->
-                    point:date(A) =< point:date(B)
-                end, ListOfPoints),
-                FirstPoint = hd(Sorted),
-                {point:date(FirstPoint), point:owners(FirstPoint)}
-            end, maps:values(GroupedByMonth)),
-
-            Owners1 = lists:sort(Owners0),
+            Owners = construct_owners(Points),
 
             ComparePoints = index_server:read(),
-            Graph = helper:normalize_compare(Points, ComparePoints),
 
             Ejson = {[
                 {name, instrument:name(Instrument)},
-                {owners, lists:map(fun({Date, Owners}) ->
+                {owners, lists:map(fun({Date, DateOwners}) ->
                     {[
                         {date, Date},
-                        {owners, calc:to_binary(Owners, 0)}
+                        {owners, calc:to_binary(DateOwners, 0)}
                     ]}
-                end, Owners1)},
-                {graph, helper:graph_ejson(Graph)}
+                end, Owners)},
+                {graph, graph:graph_ejson(Points, ComparePoints, instrument:name(Instrument), <<"SRI">>)}
             ]},
 
             Json = jiffy:encode(Ejson),
@@ -71,3 +57,19 @@ get(Req, State, Key) ->
     end,
     {ok, Req1, State}.
 
+
+
+construct_owners(Points) ->
+    GroupedByMonth = lists:foldl(fun(P, Acc) ->
+        PointKey = binary:part(point:date(P), 0, 7),
+        maps:update_with(PointKey, fun(List) -> [P|List] end, [P], Acc)
+    end, #{}, Points),
+    Owners0 = lists:map(fun(ListOfPoints) ->
+        Sorted = lists:sort(fun(A, B) ->
+            point:date(A) =< point:date(B)
+        end, ListOfPoints),
+        FirstPoint = hd(Sorted),
+        {point:date(FirstPoint), point:owners(FirstPoint)}
+    end, maps:values(GroupedByMonth)),
+
+    lists:sort(Owners0).
