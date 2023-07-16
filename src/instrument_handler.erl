@@ -33,9 +33,17 @@ get(Req, State, Key) ->
         {error, not_found} ->
             Req1 = cowboy_req:reply(404, Req);
         {ok, Instrument} ->
-            Points = lists:filter(fun(P) ->
+            Points0 = lists:filter(fun(P) ->
                 date_util:is_after_or_equal(point:date(P), <<"2023-01-01">>)
             end, point:db_find_all(instrument:key(Instrument))),
+
+            Points = lists:map(fun(Point) ->
+                Date = point:date(Point),
+                Price = point:price(Point),
+                Fx = fx:db_closest_rate(Date, instrument:currency(Instrument), <<"SEK">>),
+                FxPrice = calc:multiply(Price, Fx),
+                point:price(FxPrice, Point)
+            end, Points0),
 
             Owners = construct_owners(Points),
 

@@ -81,9 +81,9 @@ calculate() ->
                             Day ->
                                 Members = helper:construct_members(Day),
                                 IndexChanges = lists:map(fun({Instrument, Point, Weight}) ->
-                                    Fx = fx:db_closest_rate(Date, instrument:currency(Instrument), <<"SEK">>),
-                                    DayPrice = calc:multiply(point:price(Point), Fx),
-                                    YesterdayPrice = calc:multiply(find_prev_price(All, Date, Instrument, Point), Fx),
+                                    DayPrice = fx_price(Date, point:price(Point), Instrument),
+                                    {PrevPriceDate, PrevPrice} = find_prev_price(All, Date, Instrument, Point),
+                                    YesterdayPrice = fx_price(PrevPriceDate, PrevPrice,Instrument),
                                     Change = calc:percent_change(YesterdayPrice, DayPrice),
                                     calc:multiply(Change, Weight)
                                 end, Members),
@@ -103,8 +103,12 @@ calculate() ->
             end, Sequence)
     end.
 
+fx_price(Date, Price, Instrument) ->
+    Fx = fx:db_closest_rate(Date, instrument:currency(Instrument), <<"SEK">>),
+    calc:multiply(Price, Fx).
+
 find_prev_price(_All, <<"2021-01-01">>, _Instrument, Point) ->
-    point:price(Point);
+    {<<"2021-01-01">>, point:price(Point)};
 find_prev_price(All, OldDate, Instrument, Point) ->
     Date = date_util:shift(OldDate, -1, days),
     {_, Points} = maps:get(instrument:key(Instrument), All),
@@ -112,7 +116,7 @@ find_prev_price(All, OldDate, Instrument, Point) ->
         undefined ->
             find_prev_price(All, Date, Instrument, Point);
         FoundPoint ->
-            point:price(FoundPoint)
+            {Date, point:price(FoundPoint)}
     end.
 
 create_day(List, Date) ->

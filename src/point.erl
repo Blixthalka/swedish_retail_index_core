@@ -7,6 +7,7 @@
     owners/1,
     date/1,
     price/1,
+    price/2,
     instrument_key/1,
 
     to_ejson/1,
@@ -50,6 +51,9 @@ date(#point{date = Date}) ->
 
 price(#point{price = Price}) ->
     Price.
+
+price(Price, Point) ->
+    Point#point{price = Price}.
 
 
 instrument_key(#point{instrument_key = InstrumentKey}) ->
