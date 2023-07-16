@@ -99,7 +99,7 @@ calculate() ->
 
             Sequence = lists:reverse(Res),
             lists:map(fun({Date, Price}) ->
-                point:create(Date, sri, Price, calc:zero())
+                point:create(Date, sri, calc:round(Price, 2), calc:zero())
             end, Sequence)
     end.
 

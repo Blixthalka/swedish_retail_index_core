@@ -12,14 +12,18 @@ init(Req, State) ->
     end.
 
 get(Req, State) ->
-    Points = index_server:read(),
+    Parameters = parameters(Req),
+    Period = parse:atom(<<"period">>, Parameters, ['1m', '3m', '6m', ytd], ytd),
+    Points0 = index_server:read(),
+    Points1 = graph:filter_period_points(Period, Points0),
+
 
     Instrument = instrument:db_index(),
     ComparePoints = point:db_find_all(instrument:key(Instrument)),
 
 
     Ejson = {[
-        {graph, graph:graph_ejson(Points, ComparePoints, <<"SRI">>, instrument:name(Instrument))}
+        {graph, graph:graph_ejson(Points1, ComparePoints, <<"SRI">>, instrument:name(Instrument))}
     ]},
 
     Json = jiffy:encode(Ejson),
@@ -29,3 +33,6 @@ get(Req, State) ->
 
 
 
+parameters(Req) ->
+    P = cowboy_req:parse_qs(Req),
+    maps:from_list(P).

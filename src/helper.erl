@@ -82,18 +82,29 @@ construct_members(Day) ->
 normalize_compare(MainPoints, ComparePoints) ->
     FirstDate = point:date(hd(MainPoints)),
     FirstMainPrice = point:price(hd(MainPoints)),
-    FirstComparePrice = find_price(FirstDate, ComparePoints),
+     case find_price(FirstDate, ComparePoints) of
+        undefined ->
+            FirstComparePrice = point:price(hd(ComparePoints));
+        FCP ->
+            FirstComparePrice = FCP
+    end,
 
     lists:map(fun(Point) ->
         Date = point:date(Point),
-        NonNormalizedPrice = find_price(Date, ComparePoints),
+
+        case find_price(Date, ComparePoints) of
+            undefined ->
+                NonNormalizedPrice = FirstComparePrice;
+            NNP ->
+                NonNormalizedPrice = NNP
+        end,
         Price = calc:multiply(calc:divide(NonNormalizedPrice, FirstComparePrice), FirstMainPrice),
         {Date, point:price(Point), Price}
     end, MainPoints).
 
 
 find_price(<<"2021-01-01">>, _) ->
-    calc:zero();
+    undefined;
 find_price(Date, Points) ->
     FoundPoints = lists:filter(fun(P) ->
         point:date(P) =:= Date

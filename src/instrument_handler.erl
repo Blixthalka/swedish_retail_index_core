@@ -29,13 +29,15 @@ get(Req, State, undefined) ->
     Req1 = cowboy_req:reply(200, #{<<"content-type">> => <<"application/json">>}, Json, Req),
     {ok, Req1, State};
 get(Req, State, Key) ->
+    Parameters = parameters(Req),
+    Period = parse:atom(<<"period">>, Parameters, ['1m', '3m', '6m', ytd], ytd),
+
     case instrument:db_read(Key) of
         {error, not_found} ->
             Req1 = cowboy_req:reply(404, Req);
         {ok, Instrument} ->
-            Points0 = lists:filter(fun(P) ->
-                date_util:is_after_or_equal(point:date(P), <<"2023-01-01">>)
-            end, point:db_find_all(instrument:key(Instrument))),
+            Points0 = point:db_find_all(instrument:key(Instrument)),
+            Points1 = graph:filter_period_points(Period, Points0),
 
             Points = lists:map(fun(Point) ->
                 Date = point:date(Point),
@@ -43,7 +45,7 @@ get(Req, State, Key) ->
                 Fx = fx:db_closest_rate(Date, instrument:currency(Instrument), <<"SEK">>),
                 FxPrice = calc:multiply(Price, Fx),
                 point:price(FxPrice, Point)
-            end, Points0),
+            end, Points1),
 
             Owners = construct_owners(Points),
 
@@ -81,3 +83,7 @@ construct_owners(Points) ->
     end, maps:values(GroupedByMonth)),
 
     lists:sort(Owners0).
+
+parameters(Req) ->
+    P = cowboy_req:parse_qs(Req),
+    maps:from_list(P).
