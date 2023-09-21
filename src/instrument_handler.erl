@@ -47,20 +47,31 @@ get(Req, State, Key) ->
                 point:price(FxPrice, Point)
             end, Points1),
 
-            Owners = construct_owners(Points),
+            OwnersSeries = lists:map(fun(Point) ->
+                {[
+                    {date, point:date(Point)},
+                    {value, calc:to_binary(point:owners(Point))}
+                ]}
+            end, Points),
+
+            AllValues = lists:map(fun(Point) -> point:owners(Point) end, Points),
+            Min = calc:min(AllValues),
+            Max = calc:max(AllValues),
 
             ComparePoints = index_server:read(),
 
             Ejson = {[
                 {name, instrument:name(Instrument)},
-                {owners, lists:map(fun({Date, DateOwners}) ->
-                    {[
-                        {date, Date},
-                        {owners, calc:to_binary(DateOwners, 0)}
-                    ]}
-                end, Owners)},
+                {owners, {[
+                    {series, OwnersSeries},
+                    {main_name, <<"Owners">>},
+                    {min, calc:to_binary(Min, 2)},
+                    {max, calc:to_binary(Max, 2)}
+                ]}},
                 {graph, graph:graph_ejson(Points, ComparePoints, instrument:name(Instrument), <<"SRI">>)}
             ]},
+
+
 
             Json = jiffy:encode(Ejson),
             Req1 = cowboy_req:reply(200, #{<<"content-type">> => <<"application/json">>}, Json, Req)
@@ -68,21 +79,6 @@ get(Req, State, Key) ->
     {ok, Req1, State}.
 
 
-
-construct_owners(Points) ->
-    GroupedByMonth = lists:foldl(fun(P, Acc) ->
-        PointKey = binary:part(point:date(P), 0, 7),
-        maps:update_with(PointKey, fun(List) -> [P|List] end, [P], Acc)
-    end, #{}, Points),
-    Owners0 = lists:map(fun(ListOfPoints) ->
-        Sorted = lists:sort(fun(A, B) ->
-            point:date(A) =< point:date(B)
-        end, ListOfPoints),
-        FirstPoint = hd(Sorted),
-        {point:date(FirstPoint), point:owners(FirstPoint)}
-    end, maps:values(GroupedByMonth)),
-
-    lists:sort(Owners0).
 
 parameters(Req) ->
     P = cowboy_req:parse_qs(Req),
