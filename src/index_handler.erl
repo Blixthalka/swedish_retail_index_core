@@ -13,7 +13,7 @@ init(Req, State) ->
 
 get(Req, State) ->
     Parameters = parameters(Req),
-    Period = parse:atom(<<"period">>, Parameters, ['1m', '3m', '6m', ytd], ytd),
+    Period = parse:atom(<<"period">>, Parameters, ['1m', '3m', '6m', ytd, '1y', start], '1y'),
     Points0 = index_server:read(),
     Points1 = graph:filter_period_points(Period, Points0),
 

@@ -30,7 +30,7 @@ get(Req, State, undefined) ->
     {ok, Req1, State};
 get(Req, State, Key) ->
     Parameters = parameters(Req),
-    Period = parse:atom(<<"period">>, Parameters, ['1m', '3m', '6m', ytd], ytd),
+    Period = parse:atom(<<"period">>, Parameters, ['1m', '3m', '6m', ytd, '1y', 'start'], '1y'),
 
     case instrument:db_read(Key) of
         {error, not_found} ->

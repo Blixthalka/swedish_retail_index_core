@@ -43,6 +43,14 @@ first_date(Points) ->
         end
     end, undefined, Points).
 
+filter_points(start, Points) ->
+    Today = date_util:today(),
+    Start = <<"2023-01-01">>,
+    filter_between(Start, Today, Points);
+filter_points('1y', Points) ->
+    Today = date_util:today(),
+    Start = date_util:shift(Today, -1, years),
+    filter_between(Start, Today, Points);
 filter_points(ytd, Points) ->
     Today = date_util:today(),
     YearStart = date_util:year_start(Today),
