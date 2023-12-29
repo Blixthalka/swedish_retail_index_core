@@ -32,7 +32,8 @@ start_cowboy() ->
         }
     },
     ApiOptions = [
-        {port, 8082}
+        {port, 8082},
+        inet6
     ],
     {ok, _} = cowboy:start_clear(http_api, ApiOptions, ApiConfig),
 
