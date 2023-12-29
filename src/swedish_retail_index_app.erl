@@ -24,6 +24,7 @@ start_cowboy() ->
     ]}]),
     ApiConfig = #{
         middlewares => [
+            middleware_log,
             cowboy_router,
             cowboy_handler
         ],
@@ -45,6 +46,7 @@ start_cowboy() ->
     ]}]),
     OpsConfig = #{
         middlewares => [
+            middleware_log,
             cowboy_router,
             cowboy_handler
         ],
