@@ -20,5 +20,6 @@ COPY --from=0 /buildroot/_build/default/rel/swedish_retail_index /swedish_retail
 
 RUN mkdir -p /swedish_retail_index/mnesia
 EXPOSE 8082
+EXPOSE 7082
 
 CMD ["/swedish_retail_index/bin/swedish_retail_index", "foreground"]

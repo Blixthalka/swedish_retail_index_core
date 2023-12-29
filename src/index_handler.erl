@@ -12,6 +12,8 @@ init(Req, State) ->
     end.
 
 get(Req, State) ->
+    io:format("Index Request\n", []),
+
     Parameters = parameters(Req),
     Period = parse:atom(<<"period">>, Parameters, ['1m', '3m', '6m', ytd, '1y', start], '1y'),
     Points0 = index_server:read(),
