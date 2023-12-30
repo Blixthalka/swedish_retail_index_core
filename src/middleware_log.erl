@@ -16,7 +16,7 @@
 -spec execute(cowboy_req:req(), cowboy_middleware:env()) ->
                  {ok, cowboy_req:req(), cowboy_middleware:env()} | {stop, cowboy_req:req()}.
 execute(Req, Env) ->
-   io:format("GOT ~p ~p \n", [cowboy_req:method(Req), cowboy_req:path(Req)]),
+   io:format("GOT ~p ~p  \n", [cowboy_req:method(Req), cowboy_req:path(Req)]),
 
    case binary:match(cowboy_req:path(Req), <<"/ops/">>) of
       nomatch ->
