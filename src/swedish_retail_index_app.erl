@@ -20,7 +20,12 @@ start_cowboy() ->
         {"/api/instruments/[:key]", instrument_handler, []},
         {"/api/index", index_handler, []},
         {"/api/points/:key", point_handler, []},
-        {"/api/change", change_handler, []}
+        {"/api/change", change_handler, []},
+
+        {"/api/ops/fx", fx_handler, []},
+        {"/api/ops/points", point_ops_handler, []},
+        {"/api/ops/instruments", instrument_ops_handler, []},
+        {"/api/ops/index", index_ops_handler, []}
     ]}]),
     ApiConfig = #{
         middlewares => [
@@ -37,28 +42,6 @@ start_cowboy() ->
         inet6
     ],
     {ok, _} = cowboy:start_clear(http_api, ApiOptions, ApiConfig),
-
-    OpsRoutes = cowboy_router:compile([{'_', [
-        {"/api/fx", fx_handler, []},
-        {"/api/points", point_ops_handler, []},
-        {"/api/instruments", instrument_ops_handler, []},
-        {"/api/index", index_ops_handler, []}
-    ]}]),
-    OpsConfig = #{
-        middlewares => [
-            middleware_log,
-            cowboy_router,
-            cowboy_handler
-        ],
-        env => #{
-            dispatch => OpsRoutes
-        }
-    },
-    OpsOptions = [
-        {port, 7082},
-        inet6
-    ],
-    {ok, _} = cowboy:start_clear(http_ops, OpsOptions, OpsConfig),
     ok.
 
 stop(_State) ->
