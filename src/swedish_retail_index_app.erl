@@ -55,7 +55,8 @@ start_cowboy() ->
         }
     },
     OpsOptions = [
-        {port, 7082}
+        {port, 7082},
+        inet6
     ],
     {ok, _} = cowboy:start_clear(http_ops, OpsOptions, OpsConfig),
     ok.
