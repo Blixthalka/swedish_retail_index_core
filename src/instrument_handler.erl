@@ -23,6 +23,7 @@ execute(Req, State, Fun) ->
             Resp = Fun(Req, State),
             cache_server:save(Method, Path, Resp);
         {ok, R} ->
+            io:format("Using cached request for ~p ~p\n", [Method, Path]),
             Resp = R
     end,
     {Status, Headers, Body} = Resp,
