@@ -16,7 +16,7 @@
          handle_info/2,
          terminate/2]).
 
--record(item, {timestamp :: types:timestamp(), response :: cowboy_req:req()}).
+-record(item, {timestamp , response }).
 
 -type state() ::  #{binary() => item()}.
 -type item() :: #item{}.
@@ -30,19 +30,19 @@
 %%% External API
 %%%===================================================================
 
--spec start_link() -> gen_server:start_ret().
+
 start_link() ->
     gen_server:start_link(server_ref(), ?MODULE, [], []).
 
--spec stop() -> ok.
+
 stop() ->
     gen_server:call(server_ref(), stop).
 
--spec read(binary(), binary()) -> {ok, cowboy_req:req()} | undefined.
+
 read(Method, Path) ->
     gen_server:call(server_ref(), {read, Method, Path}).
 
--spec save(Method :: binary(), Path :: binary(), Response :: cowboy_req:req()) -> ok.
+
 save(Method, Path, Response) ->
     gen_server:call(server_ref(), {save, Method, Path, Response}).
 

@@ -18,18 +18,24 @@ run_handler(Req, State) ->
 execute(Req, State, Fun) ->
     Path = cowboy_req:path(Req),
     Method = cowboy_req:method(Req),
-
     case cache_server:read(Method, Path) of
         undefined ->
-            {ok, Req1, State0} = Fun(Req, State),
-            cache_server:save(Method, Path, Req1),
-            {ok, Req1, State0};
-        {ok, Req1} ->
-            {ok, Req1, State}
-    end.
+            Resp = Fun(Req, State),
+            cache_server:save(Method, Path, Resp);
+        {ok, R} ->
+            Resp = R
+    end,
+    {Status, Headers, Body} = Resp,
+    case Body of
+        undefined ->
+            ReqResp = cowboy_req:reply(Status, Headers, Req);
+        _ ->
+            ReqResp = cowboy_req:reply(Status, Headers, Body, Req)
+    end,
+    {ok, ReqResp, State}.
 
 
-get(Req, State, undefined) ->
+get(_Req, _State, undefined) ->
     Members = helper:construct_members_most_recent(),
 
     Ejson = lists:map(fun({Instrument, Point, Weight}) ->
@@ -44,15 +50,14 @@ get(Req, State, undefined) ->
     end, Members),
 
     Json = jiffy:encode(Ejson),
-    Req1 = cowboy_req:reply(200, #{<<"content-type">> => <<"application/json">>}, Json, Req),
-    {ok, Req1, State};
-get(Req, State, Key) ->
+    {200, #{<<"content-type">> => <<"application/json">>}, Json};
+get(Req, _State, Key) ->
     Parameters = parameters(Req),
     Period = parse:atom(<<"period">>, Parameters, ['1m', '3m', '6m', ytd, '1y', 'start'], '1y'),
 
     case instrument:db_read(Key) of
         {error, not_found} ->
-            Req1 = cowboy_req:reply(404, Req);
+            {404, [], undefined};
         {ok, Instrument} ->
             Points0 = point:db_find_all(instrument:key(Instrument)),
             Points1 = graph:filter_period_points(Period, Points0),
@@ -90,9 +95,8 @@ get(Req, State, Key) ->
             ]},
 
             Json = jiffy:encode(Ejson),
-            Req1 = cowboy_req:reply(200, #{<<"content-type">> => <<"application/json">>}, Json, Req)
-    end,
-    {ok, Req1, State}.
+            {200, #{<<"content-type">> => <<"application/json">>}, Json}
+    end.
 
 
 
