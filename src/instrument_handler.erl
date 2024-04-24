@@ -16,8 +16,11 @@ run_handler(Req, State) ->
 
 
 execute(Req, State, Fun) ->
-    Path = cowboy_req:path(Req),
+    Qs = cowboy_req:qs(Req),
+    Path0 = cowboy_req:path(Req),
+    Path = <<Path0/binary, Qs/binary>>,
     Method = cowboy_req:method(Req),
+
     case cache_server:read(Method, Path) of
         undefined ->
             Resp = Fun(Req, State),
