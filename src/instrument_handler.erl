@@ -3,6 +3,9 @@
 -export([init/2]).
 
 init(Req, State) ->
+    execute(Req, State, fun run_handler/2).
+
+run_handler(Req, State) ->
     case cowboy_req:method(Req) of
         <<"GET">> ->
             get(Req, State, cowboy_req:binding(key, Req));
@@ -10,6 +13,21 @@ init(Req, State) ->
             Req1 = cowboy_req:reply(404, #{}, Req),
             {ok, Req1, State}
     end.
+
+
+execute(Req, State, Fun) ->
+    Path = cowboy_req:path(Req),
+    Method = cowboy_req:method(Req),
+
+    case cache_server:read(Method, Path) of
+        undefined ->
+            {ok, Req1, State0} = Fun(Req, State),
+            cache_server:save(Method, Path, Req1),
+            {ok, Req1, State0};
+        {ok, Req1} ->
+            {ok, Req1, State}
+    end.
+
 
 get(Req, State, undefined) ->
     Members = helper:construct_members_most_recent(),
@@ -70,8 +88,6 @@ get(Req, State, Key) ->
                 ]}},
                 {graph, graph:graph_ejson(Points, ComparePoints, instrument:name(Instrument), <<"SRI">>)}
             ]},
-
-
 
             Json = jiffy:encode(Ejson),
             Req1 = cowboy_req:reply(200, #{<<"content-type">> => <<"application/json">>}, Json, Req)

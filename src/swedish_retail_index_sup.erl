@@ -4,8 +4,7 @@
 
 -export([
     init/1,
-    start_link/0,
-    add_enduser_supervisor/1
+    start_link/0
 ]).
 
 start_link() ->
@@ -19,11 +18,18 @@ init([]) ->
         period => 1
     },
 
-    {ok, {SupFlags, [index_supervisor()]}}.
+    {ok, {SupFlags, [index_supervisor(), cache_server()]}}.
 
 
-add_enduser_supervisor(_) ->
-    ok.
+cache_server() ->
+    {
+        cache_server,
+        {cache_server, start_link, []},
+        permanent,
+        10000,
+        worker,
+        [cache_server]
+    }.
 
 
 index_supervisor() ->
