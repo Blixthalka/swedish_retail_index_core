@@ -27,6 +27,7 @@ execute(Req, State, Fun) ->
             Resp = R
     end,
     {Status, Headers, Body} = Resp,
+
     case Body of
         undefined ->
             ReqResp = cowboy_req:reply(Status, Headers, Req);
