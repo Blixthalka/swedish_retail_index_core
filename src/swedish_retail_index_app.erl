@@ -25,7 +25,8 @@ start_cowboy() ->
         {"/api/ops/fx", fx_handler, []},
         {"/api/ops/points", point_ops_handler, []},
         {"/api/ops/instruments", instrument_ops_handler, []},
-        {"/api/ops/index", index_ops_handler, []}
+        {"/api/ops/index", index_ops_handler, []},
+        {"/api/ops/split", split_ops_handler, []}
     ]}]),
     ApiConfig = #{
         middlewares => [

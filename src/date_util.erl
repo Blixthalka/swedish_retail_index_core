@@ -21,6 +21,7 @@
          is_before_or_equal/2,
          is_valid_date_binary/1,
          days_between/2,
+         parse_date/2,
          day_split/3,
          is_bank_holiday/1,
          shift_workdays/2,
@@ -206,21 +207,21 @@ day_split_average(Points, StartDate, EndDate, Average, Dates0) ->
 %%
 %% Current POSIX timestamp in seconds (UTC)
 %%
--spec now_in_seconds() -> types:timestamp().
+
 now_in_seconds() ->
     erlang:system_time(second).
 
 %%
 %% Current POSIX timestamp in milli seconds (UTC)
 %%
--spec now_in_milli_seconds() -> types:timestamp().
+
 now_in_milli_seconds() ->
     erlang:system_time(millisecond).
 
 %%
 %% Current POSIX timestamp in micro seconds (UTC)
 %%
--spec now_in_micro_seconds() -> types:timestamp().
+
 now_in_micro_seconds() ->
     erlang:system_time(microsecond).
 
@@ -228,7 +229,6 @@ now_in_micro_seconds() ->
 %%
 %% Convert POSIX timestamp in ms to binary on the format <<"YYYY-MM-DD hh:mm:ss">>.
 %%
--spec posix_microseconds_to_binary(Timestamp::types:timestamp()) -> binary().
 posix_microseconds_to_binary(Timestamp) when is_integer(Timestamp) ->
     M = 1000000,
     ErlangTimestamp = {Timestamp div M div M, Timestamp div M rem M, Timestamp rem M},
@@ -240,7 +240,6 @@ posix_microseconds_to_binary(Timestamp) when is_integer(Timestamp) ->
 %%
 %% Convert POSIX timestamp in ms to binary on the format <<"YYYY-MM-DD">>.
 %%
--spec posix_microseconds_to_binary_date(Timestamp::types:timestamp()) -> binary().
 posix_microseconds_to_binary_date(Timestamp) when is_integer(Timestamp) ->
     M = 1000000,
     ErlangTimestamp = {Timestamp div M div M, Timestamp div M rem M, Timestamp rem M},
@@ -251,7 +250,23 @@ posix_microseconds_to_binary_date(Timestamp) when is_integer(Timestamp) ->
 %%
 %% Convert binary date <<"YYYY-MM-DD">> to microseconds timestamp
 %%
--spec date_to_microseconds(Date::binary()) -> types:timestamp().
 date_to_microseconds(Date) ->
     TS = <<Date/binary, " 00:00:00.000Z">>,
     calendar:rfc3339_to_system_time(binary_to_list(TS), [{unit, microsecond}]).
+
+
+parse_date(Field, Map) ->
+    case maps:get(Field, Map, undefined) of
+        Date when is_binary(Date) andalso byte_size(Date) > 0 ->
+            DateBin = iolist_to_binary(string:trim(Date)),
+            case date_util:is_valid_date_binary(DateBin) of
+                true ->
+                    %% We accept dates on the format mm/dd/yyyy but we don't want to store that.
+                    %% We always want to store yyyy-mm-dd
+                    date_util:date_to_binary(date_util:binary_to_date(DateBin));
+                false ->
+                    throw({invalid_input, <<"Invalid date">>, Field})
+            end;
+        _ ->
+            throw({invalid_input, <<"Invalid date">>, Field})
+    end.

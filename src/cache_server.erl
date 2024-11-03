@@ -50,7 +50,6 @@ save(Method, Path, Response) ->
 %%% gen_server callbacks
 %%%===================================================================
 
--spec init(Customer :: customer:customer()) -> {ok, state(), hibernate}.
 init(_) ->
     timer_send_clean_msg(),
     {ok, #{}, hibernate}.
@@ -73,12 +72,12 @@ handle_call({save, Method, Path, Response}, _From, Cache0) ->
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State}.
 
--spec handle_cast(Action :: term(), State :: state()) -> {noreply, state()}.
+
 handle_cast(Msg, State) ->
     ?LOG_ERROR("unknown message: ~p", [Msg]),
     {noreply, State}.
 
--spec handle_info(clean, State :: state()) -> {noreply, state()}.
+
 handle_info(clean, Cache0) ->
     ?LOG_INFO("Cleaning kiid cache"),
     Cache1 =
@@ -96,7 +95,7 @@ handle_info(clean, Cache0) ->
     timer_send_clean_msg(),
     {noreply, Cache1}.
 
--spec terminate(Reason :: types:terminate_reason(), State :: state()) -> ok.
+
 terminate(_Reason, _State) ->
     ok.
 
