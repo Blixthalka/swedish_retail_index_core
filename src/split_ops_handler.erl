@@ -32,6 +32,7 @@ post(Req, State) ->
         point:db_create(Point1)
     end, Points1),
 
+    cache_server:empty(),
     index_server:recalc(),
     Req1 = cowboy_req:reply(200, #{}, Req),
     {ok, Req1, State}.

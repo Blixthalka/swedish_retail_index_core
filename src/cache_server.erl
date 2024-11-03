@@ -8,6 +8,7 @@
 -export([start_link/0,
          stop/0,
          read/2,
+         empty/0,
          save/3]).
 %%% gen_server callbacks
 -export([init/1,
@@ -46,6 +47,9 @@ read(Method, Path) ->
 save(Method, Path, Response) ->
     gen_server:call(server_ref(), {save, Method, Path, Response}).
 
+empty() ->
+    gen_server:call(server_ref(), empty).
+
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
@@ -66,6 +70,8 @@ handle_call({read, Method, Path}, _From, Cache0) ->
         #item{response = Response} ->
             {reply, {ok, Response}, Cache0}
     end;
+handle_call(empty, _From, _Cache0) ->
+    {reply, ok, #{}};
 handle_call({save, Method, Path, Response}, _From, Cache0) ->
     Cache1 = maps:put(key(Method, Path), new_item(Response), Cache0),
     {reply, {ok, Response}, Cache1};
@@ -73,13 +79,10 @@ handle_call(stop, _From, State) ->
     {stop, normal, ok, State}.
 
 
-handle_cast(Msg, State) ->
-    ?LOG_ERROR("unknown message: ~p", [Msg]),
+handle_cast(_Msg, State) ->
     {noreply, State}.
 
-
 handle_info(clean, Cache0) ->
-    ?LOG_INFO("Cleaning kiid cache"),
     Cache1 =
         maps:filter(fun(Key, #item{timestamp = Timestamp}) ->
                        Now = date_util:now_in_milli_seconds(),
